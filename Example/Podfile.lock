@@ -1,0 +1,16 @@
+PODS:
+  - WCCommandExecutor (0.1.0)
+
+DEPENDENCIES:
+  - WCCommandExecutor (from `../`)
+
+EXTERNAL SOURCES:
+  WCCommandExecutor:
+    :path: ../
+
+SPEC CHECKSUMS:
+  WCCommandExecutor: b9d743431b5637bd8cf1184ba2698823666bafca
+
+PODFILE CHECKSUM: 49e47f87a7fca8bda0ff47847633f366b2b85e92
+
+COCOAPODS: 1.1.1
