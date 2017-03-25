@@ -1,0 +1,324 @@
+Introduction to Protocol Buffers on iOS
+
+
+Introduction to Protocol Buffers
+For most apps that require backend services, transmitting and storing data is a big job. When interfacing with a web service, developers are usually required to send and receive data using JSON or XML, building structures and parsing them later.
+Although there are plenty of APIs and frameworks to help with serialization and deserialization, going this route introduces maintenance concerns, such as versioning code and updating object parsers to support backend model changes.
+If you are serious about making your new backend and frontend services robust, consider using protocol buffers, which are language-agnostic methods developed by Google for serializing structured data. In many cases, they are more flexible and efficient than other common methods like JSON and XML.
+One of the key features is they allow you to define your data structure once, from which a compiler can generate code in any supported language — including Swift! The generated class files provide effortless reading and writing of objects.
+In this tutorial, you will start up a Python server and integrate data with an existing iOS app. To get started, you will learn how protocol buffers work, how to set up the environment, and lastly how to transmit data with protocol buffers.
+Still not convinced protocol buffers is what you need? Read on!
+Note: This tutorial assumes you have the basic knowledge in iOS and Swift, with some basic server-side knowledge, and using the terminal.
+As well, make sure you are running Apple’s latest Xcode 8.2.
+Getting Started
+RWCards is an app that lets you view your conference ticket and the list of speakers at the event.
+Start by downloading the Starter Project and open the root directory Starter. Familiarize yourself with the three included components listed below:
+The Client
+Within Starter/RWCards, open RWCards.xcworkspace and take a look at some of the key files in the project:
+	•	SpeakersListViewController.swift manages a table view which displays the list of speakers. The controller is currently a template since you haven’t created a model object yet.
+	•	SpeakersViewModel.swift acts as the data source for SpeakersListViewController. It will contain the list of speakers.
+	•	CardViewController.swift contains the controller code to display an attendee’s badge along with their social information.
+	•	RWService.swift manages the integration between the client and backend. You will use Alamofire to make the service calls.
+	•	Main.storyboard contains all storyboard scenes for the app.
+The project uses CocoaPods to pull in two frameworks:
+	•	Swift Protobuf allows you to use protocol buffers in your Xcode project.
+	•	Alamofire is a HTTP networking library that you will use to make requests to the server.
+Note: In this tutorial you will use Swift Protobuf 0.9.24 and Google’s Protoc Compiler 3.1.0. They are already packaged with the starter so you don’t need to do anything further.
+How do Protocol Buffers Work?
+To use protocol buffers, you must first define a .proto file. Within the file, you specify a message type that defines how your schema or data structure will look. Below is a sample of a .proto file:
+syntax = "proto3";
+ 
+message Contact {
+ 
+  enum ContactType {
+    SPEAKER = 0;
+    ATTENDANT = 1;
+    VOLUNTEER = 2;
+  }
+ 
+  string first_name = 1;
+  string last_name = 2;
+  string twitter_name = 3;
+  string email = 4;
+  string github_link = 5;
+  ContactType type = 6;
+  string imageName = 7;
+};
+This defines a Contact message along with associated attributes.
+With a .proto file defined, all you have to do is pass the file into the protocol buffer compiler, and it will generate data access classes (structs in Swift) in the supported languages of your choice. You can then use the classes/structs generated in the project you are working with. It’s that simple!
+
+The compiler will interpret the message, map the value types to the chosen language and generate the appropriate model object files. You’ll cover more on how to define a message later.
+Before considering protocol buffers, you should first consider if it’s an appropriate strategy for your project.
+Benefits
+JSON and XML may be the standard approach that developers use to store and transmit data, but here’s why protocol buffers are great:
+	•	Faster, and smaller: According to Google, protocol buffers are 3-10 times smaller, and 20-100 times faster than XML. Also check out this post by Damien Bod where he compares the read and write times between popular formats.
+	•	Type safety: Protocol buffers are type-safe like Swift. Using the protocol buffer language, you need to specify a type for every property.
+	•	Automatic deserialization: You no longer need to write boilerplate parsing code. You simply need to update your proto file and regenerate the data access classes.
+	•	Sharing is caring: The ability to share models across various platforms with supported languages means less work is required when working cross-platform.
+Limitations
+Protocol buffers, as useful as they are, aren’t the answer to every problem:
+	•	Time and effort: It may not be cost effective to adapt protocol buffers in existing systems due to conversion costs. Additionally, it requires learning a new language syntax.
+	•	Not human readable: XML and JSON are more descriptive, and easier to read. Protocol buffers in their raw format are not self-describing. Without the .proto file, you won’t be able to interpret the data.
+	•	Just not a good fit: XML is great when you want to use stylesheets like XSLT. Protocol buffers are not always the best tool for the job.
+	•	Not supported: The compiler may not support the language of other systems you are communicating with.
+While it’s not right for every situation, there certainly are some great arguments for using protocol buffers!
+Build and run the app and try it out.
+
+Unfortunately you can’t view any of the information yet because the datasource hasn’t been populated. Your job will be to call the backend service and populate the UI with the list of speakers and attendee badges. First, you’ll take a look at what the starter has provided for these two pieces.
+Protocol Buffer Schema
+Head back to Finder and look inside Starter/ProtoSchema. You’ll see the following files:
+	•	contact.proto describes how a contact should be structured using the protocol buffer language. You’ll dive deeper into this later.
+	•	protoScript.sh is a bash script that will generate Swift structs and Python classes for contact.proto using the protocol buffer compiler.
+The Backend
+Within the folder Starter/Server, you’ll see the following:
+	•	RWServer.py manages a Python server built on top of Flask. It contains two GET requests:
+	◦	/currentUser gets the current attendee’s information.
+	◦	/speakers gets the list of speakers.
+	•	RWDict.py contains a dictionary of speakers that RWServer will read from.
+Now it’s time to set up the environment to run protocol buffers. In the following section, you’ll set up the required environments to run Google’s protocol buffer compiler, Swift’s Protobuf plugin, and install Flask to run your Python server.
+Environment Setup
+There are a several tools and libraries that you have to install before using protocol buffers. The starter project includes a script named protoInstallation.sh that handles all of this for you. Luckily for you, it will check if any of the libraries are installed before installing each one!
+This script will take a while to install, especially when installing Google’s protocol buffer libraries. Open up your terminal, cd into the Starter directory and execute the following command:
+Note: You may be prompted to enter your admin password while running the script.
+When the script completes, run it again to ensure you get output similar to the following:
+
+If you see this, the script has successfully completed. If the script failed, you might have entered the wrong admin password. In that cause, try rerunning the script; it won’t reinstall anything that happened successfully.
+Here’s what the script has accomplished:
+	1	Installed Flask to run the Python Local Server.
+	2	Built the Google protocol buffer compiler from Starter/protobuf-3.1.0.
+	3	Installed the protocol buffer module for Python so the server can use the Protobuf library.
+	4	Moved the Swift Protobuf plugin protoc-gen-swift into /usr/local/bin. This allows the Protobuf compiler to generate Swift structs.
+Note: For more information on how the script works, you can open the protoInstallation.sh file in a text editor to see what commands are being executed. This requires some basic bash knowledge.
+You now have everything you need to start using protocol buffers!
+Defining a .proto File
+.proto files define protocol buffer messages which describe the structure of your data. When fed through the protocol buffer compiler, they generate data accessor structs.
+Note:In this tutorial, you’ll define messages with proto3, the latest protocol buffer language version. For more in-depth knowledge on syntax and how to define a proto3 file, check out Google’s guidelines.
+Open ProtoSchema/contact.proto in your favorite text editor. Here the .proto file has already been defined for you to generate Contact and Speakers messages:
+syntax = "proto3";
+ 
+message Contact { // 1
+ 
+  enum ContactType { // 2
+    SPEAKER = 0;
+    ATTENDANT = 1;
+    VOLUNTEER = 2;
+  }
+ 
+  string first_name = 1; //3
+  string last_name = 2;
+  string twitter_name = 3;
+  string email = 4;
+  string github_link = 5;
+  ContactType type = 6;
+  string imageName = 7;
+};
+ 
+message Speakers { // 4
+  repeated Contact contacts = 1;
+};
+Going over what this definition actually contains:
+	1	The Contact model describes a person’s contact information. This will be displayed on their badges in the app.
+	2	Every contact should be categorized so it will be easy to differentiate between guest and speakers.
+	3	Every message and enum field found in a proto definition must be assigned an incremental and unique tag. These numbers are used to identify fields in the message binary format, so it’s vital to maintaining the order. For more information on tag and field management, check out reserved fields in Google’s doc.
+	4	The Speakers model contains a collection of contacts. The repeated tag indicates an array of objects.
+Generating Swift Structs
+When you pass contact.proto into the protoc program, the messages in the proto file will generate Swift structs. These structs will conform to ProtobufMessage. protoc will provide properties for every Swift field, initializer, and methods to serialize and deserialize data.
+Note: For more information about the capabilities of Swift’s protobuf API, please refer to Apple’s Protobuf API documentation.
+In terminal, navigate to the Starter/ProtoSchema directory. Open protoScript.sh in a text editor and you’ll see the following:
+#!/bin/bash
+echo 'Running ProtoBuf Compiler to convert .proto schema to Swift'
+protoc --swift_out=. contact.proto // 1
+echo 'Running Protobuf Compiler to convert .proto schema to Python'
+protoc -I=. --python_out=. ./contact.proto // 2
+The script runs protoc twice against contact.proto — once to create the Swift source and then once again for Python.
+Back in the terminal, execute the script by running the following:
+You should see this output:
+Running ProtoBuf Compiler to convert .proto schema to Swift
+protoc-gen-swift: Generating Swift for contact.proto
+Running Protobuf Compiler to convert .proto schema to Python
+You’ve created Swift and Python source files from the contact.proto file.
+Within the ProtoSchema directory, you should see two generated files one in Swift, and one in Python. Notice that each generated file will have a corresponding .pb.swift or .pb.py The prefix pb represents that it’s a protocol buffer generated class.
+
+Drag contact.pb.swift into Xcode’s project navigator and place it in the Protocol Buffer Objects group folder. Check “Copy items if needed” when prompted. In either Finder or Terminal, copy contact_pb2.py to the Starter/Server folder.
+Feel free to look inside the contents of contact.pb.swift and contact_pb2.py to see how the proto messages map to structures in the output languages.
+Now that you have your generated model objects, it’s time to integrate!
+Running the Local Server
+The sample project contains a prebuilt Python server. This server will provide two GET calls: one to retrieve the attendee’s badge information, and another to list the speakers.
+This tutorial won’t get into the server code. However, it’s important to note that it leverages the contact_pb2.py model file you generated with the protocol buffer compiler. Feel free to take a closer look at RWServer.py if you are interested in the specifics of this, but it isn’t necessary to do this to follow along with this tutorial.
+To run the server, open Terminal and navigate to Starter/Server. Now run the following command:
+You should see the following:
+
+Testing GET Requests
+By running the HTTP request in a browser, you can see the protocol buffer’s raw data format.
+Visit http://127.0.0.1:5000/currentUser and you’ll see the following:
+
+Next try the speaker call, http://127.0.0.1:5000/speakers:
+
+Note: You can either leave the local server running, or stop it and run it again when testing the RWCards app.
+You’re now running a simple server that leverages models built from messages defined in your proto file. Pretty powerful stuff!
+Making the Service Calls
+Now that you have your local server up and running, it’s time to call the services within your app. In RWService.swift replace the existing RWService class with the following:
+class RWService {
+  static let shared = RWService() // 1
+  let url = "http://127.0.0.1:5000"
+ 
+  private init() { }
+ 
+  func getCurrentUser(_ completion: @escaping (Contact?) -> ()) { // 2
+    let path = "/currentUser"
+    Alamofire.request("\(url)\(path)").responseData { response in
+      if let data = response.result.value { // 3
+        let contact = try? Contact(protobuf: data) // 4
+        completion(contact)
+      }
+      completion(nil)
+    }
+  }
+}
+This class will be used for network interaction with your Python server. You’ve started off by implementing the currentUser call. Here’s what this does:
+	1	shared is a singleton you’ll use to access network calls.
+	2	getCurrentUser(_:) makes a request to get the current user’s data via the /currentUser endpoint. This is a hard-coded user in the simple backend you have running.
+	3	The if let unwraps the response value.
+	4	The data returned is a binary representation of the protocol buffer. The Contact initializer takes this data as input, decoding the received message.
+Decoding an object with protocol buffer is straightforward as calling the object’s initializer and passing in data. No parsing required. The Swift Protobuf library handles all of that for you!
+Now that you have your service up, it’s time to display the information.
+Integrate the Attendee’s Badge
+Open CardViewController.swift and add the following methods after viewWillAppear(_:):
+func fetchCurrentUser() { // 1
+  RWService.shared.getCurrentUser { contact in
+    if let contact = contact {
+      self.configure(contact)
+    }
+  }
+}
+ 
+func configure(_ contact: Contact) { // 2
+  self.attendeeNameLabel.attributedText = NSAttributedString.attributedString(for: contact.firstName, and: contact.lastName)
+  self.twitterLabel.text = contact.twitterName
+  self.emailLabel.text = contact.email
+  self.githubLabel.text = contact.githubLink
+  self.profileImageView.image = UIImage(named: contact.imageName)
+}
+These methods will help fetch data from the server and use it to configure the badge. Here’s how they work:
+	1	fetchCurrentUser() calls the service to fetch the current user’s info, and configures CardViewController with the contact.
+	2	configure(_:) takes a Contact and sets all the UI components in the controller.
+You’ll use these shortly, but first you need to derive a readable representation of attendee type from the ContactType enum.
+Customizing Protocol Buffer Objects
+You need to add a method to convert the enum type to a string so the badge can display SPEAKER rather than 0.
+But there’s a problem. If you need to regenerate the .proto file every time you update the message, how do you add custom functionality to the model?
+
+Swift extensions are well suited for this purpose. They allow you to add to a class without modifying its source code.
+Create a new file named contact+extension.swift and add it in the Protocol Buffer Objects group folder. Add the following code to that file:
+extension Contact {
+  func contactTypeToString() -> String {
+    switch type {
+    case .speaker:
+      return "SPEAKER"
+    case .attendant:
+      return "ATTENDEE"
+    case .volunteer:
+      return "VOLUNTEER"
+    default:
+      return "UNKNOWN"
+    }
+  }
+}
+contactTypeToString() maps a ContactType to a string representation for display.
+Open CardViewController.swift and add the following line in configure(_:):
+self.attendeeTypeLabel.text = contact.contactTypeToString()
+This populates attendeeTypeLabel with the string representation of the contact type.
+Lastly, add the following after applyBusinessCardAppearance() in viewWillAppear(_:):
+if isCurrentUser {
+  fetchCurrentUser()
+} else {
+  // TODO: handle speaker
+}
+isCurrentUser is currently hard-coded to true, and will be modified when support for speakers is added. fetchCurrentUser() is called in this default case, fetching and populating the card with the current user’s information.
+Build and run to see the attendee’s badge!
+
+Integrate the List of Speakers
+With the My Badge tab done, it’s time to turn your attention to the currently blank Speakers tab.
+Open RWService.swift and add the following method to the class:
+func getSpeakers(_ completion: @escaping (Speakers?) -> ()) { // 1
+  let path = "/speakers"
+  Alamofire.request("\(url)\(path)").responseData { response in
+    if let data = response.result.value { // 2
+      let speakers = try? Speakers(protobuf: data) // 3
+      completion(speakers)
+    }
+  }
+  completion(nil)
+}
+This should look familiar; it’s similar to the way getCurrentUser(_:) works, except it fetches Speakers. Speakers contain an array of Contact objects, representing all of the conference speakers.
+Open SpeakersViewModel.swift and replace the current implementation with the following:
+class SpeakersViewModel {
+  var speakers: Speakers!
+  var selectedSpeaker: Contact?
+ 
+  init(speakers: Speakers) {
+    self.speakers = speakers
+  }
+ 
+  func numberOfRows() -> Int {
+    return speakers.contacts.count
+  }
+ 
+  func numberOfSections() -> Int {
+    return 1
+  }
+ 
+  func getSpeaker(for indexPath: IndexPath) -> Contact {
+    return speakers.contacts[indexPath.item]
+  }
+ 
+  func selectSpeaker(for indexPath: IndexPath) {
+    selectedSpeaker = getSpeaker(for: indexPath)
+  }
+}
+This acts as a data source for SpeakersListViewController, which displays a list of conference speakers. speakers consists of an array of Contacts and will be populated by the response of the /speakers endpoint. The datasource implementation returns a single Contact for each row.
+Now that the view model is set up, you will next configure the cell. Open SpeakerCell.swift and add the following code in SpeakerCell:
+func configure(with contact: Contact) {
+  profileImageView.image = UIImage(named: contact.imageName)
+  nameLabel.attributedText = NSAttributedString.attributedString(for: contact.firstName, and: contact.lastName)
+}
+This takes a Contact and uses its properties to set the cell’s image and label. The cell will show an image of the speaker, as well as their first and last name.
+Next, open SpeakersListViewController.swift and add the following code in viewWillAppear(_:), below the call to super:
+RWService.shared.getSpeakers { [unowned self] speakers in
+  if let speakers = speakers {
+    self.speakersModel = SpeakersViewModel(speakers: speakers)
+    self.tableView.reloadData()
+  }
+}
+getSpeakers(_:) makes a request to get the list of speakers. An SpeakersViewModel is initialized with the returned speakers. The tableView is then refreshed to update with the newly fetched data.
+Now for every row in the table view, you need to assign a speaker to display. Replace the code in tableView(_:cellForRowAt:) with the following:
+let cell = tableView.dequeueReusableCell(withIdentifier: "SpeakerCell", for: indexPath) as! SpeakerCell
+if let speaker = speakersModel?.getSpeaker(for: indexPath) {
+  cell.configure(with: speaker)
+}
+return cell
+getSpeaker(for:) returns the contact associated with the current table indexPath. configure(with:) is the method you defined on SpeakerCell for setting the speaker’s image and name in the cell.
+When a cell is tapped in the speaker list, you want to display the selected speaker in the CardViewController. To start, open CardViewController.swift and add the following property to the top of the class:
+You’ll eventually use this to pass along the selected speaker. Once you have it, you’ll want to display it. Replace // TODO: handle speaker with:
+if let speaker = speaker {
+  configure(speaker)
+}
+This checks to see if speaker is populated, and if so, calls configure() on it. That in turn updates the card with the speaker’s information.
+Now head back to SpeakersListViewController.swift to pass along the selected speaker. First add the following code in tableView(_:didSelectRowAt:), above performSegue(withIdentifier:sender:):
+speakersModel?.selectSpeaker(for: indexPath)
+This flags the speaker the user selected in the speakersModel.
+Next, add the following in prepare(for:sender:) under vc.isCurrentUser = false:
+vc.speaker = speakersModel?.selectedSpeaker
+This passes the selectedSpeaker into CardViewController for display.
+Make sure your local server is still running, and build and run Xcode. You should now see that the app is fully integrated with the user’s badge, and also shows the list of speakers.
+
+You have successfully built an end-to-end application using a Python server and a Swift client. They also both share the same model generated with a proto file. If you ever need to modify the model, you simply run the compiler to generate it again, and you’re ready to go on both the client and server side!
+Where to Go From Here?
+You can download the finished project here.
+In this tutorial, you have learned about the basic features of protocol buffers, how to define a .proto file and generate Swift code with the compiler. You also learned how to startup a small local server using Flask, where you created a service to send a protocol buffer binary to the client, and how effortless it was to deserialize the data.
+There is much more to protocol buffers, such as defining maps in messages and dealing with backwards compatibility. If you are interested in learning more, please check out Google’s documentation.
+Lastly another interesting thing to explore is Remote Procedure Calls which work well with protocol buffers. Check it out at GRPC.
+If you have any questions or comments, feel free to join the discussion below!
+Team
+Each tutorial at www.raywenderlich.com is created by a team of dedicated developers so that it meets our high quality standards. The team members who worked on this tutorial are:
+
+This is end.

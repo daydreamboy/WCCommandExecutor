@@ -2,4 +2,9 @@ use_frameworks!
 
 target 'MacAppTest' do
   pod 'WCCommandExecutor', :path => '../'
+  
+  target 'Tests' do
+      inherit! :search_paths
+      pod 'WCCommandExecutor', :path => '../'
+  end
 end

@@ -1,12 +1,14 @@
 //
-//  Test_runCommand.m
-//  WCCommandExecutor
+//  Tests.m
+//  Tests
 //
-//  Created by wesley chen on 17/3/22.
-//  Copyright © 2017年 daydreamboy. All rights reserved.
+//  Created by wesley chen on 2/24/17.
+//  Copyright © 2017 wesley chen. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>
+#import "XCTestCase+Addition.h"
+#import "WCCommandExecutor.h"
 
 @interface Test_runCommand : XCTestCase
 
@@ -16,23 +18,107 @@
 
 - (void)setUp {
     [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
+    NSLog(@"\n");
 }
 
 - (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+    NSLog(@"\n");
     [super tearDown];
 }
 
-- (void)testExample {
-    // This is an example of a functional test case.
-    // Use XCTAssert and related functions to verify your tests produce the correct results.
+- (void)test_currentShell {
+    NSString *str = [WCCommandExecutor currentShell];
+    NSLog(@"shell: %@", str);
 }
 
-- (void)testPerformanceExample {
-    // This is an example of a performance test case.
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
+- (void)test_run_command_python_h {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"python" arguments:@[@"-h"] completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
+- (void)test_run_command_pwd {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"pwd" arguments:nil completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
+- (void)test_run_command_ls {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"ls" arguments:nil completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
+- (void)test_run_command_ls_l {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"ls" arguments:@[@"-l"] completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
+- (void)test_run_command_ls_l_h {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"ls" arguments:@[@"-l", @"-h"] completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
+- (void)test_run_command_echo {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"echo" arguments:@[@"Hello", @"World!"] completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
+- (void)test_run_command_env {
+    [self runTestWithAsyncBlock:^{
+        [WCCommandExecutor runCommand:@"env" arguments:nil completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
     }];
 }
 

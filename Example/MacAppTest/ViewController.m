@@ -7,20 +7,22 @@
 //
 
 #import "ViewController.h"
+#import "WCCommandExecutor.h"
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
-    // Do any additional setup after loading the view.
+    
+//    [self test_run_executable_fauxpas_help];
 }
 
-
-- (void)setRepresentedObject:(id)representedObject {
-    [super setRepresentedObject:representedObject];
-
-    // Update the view, if already loaded.
+- (void)test_run_executable_fauxpas_help {
+    NSLog(@"%@", [WCCommandExecutor currentEnvironment]);
+    [WCCommandExecutor runExecutable:@"/usr/local/bin/fauxpas" arguments:nil completion:^(int status, NSString *output) {
+        NSLog(@"status: %d", status);
+        NSLog(@"output: %@", output);
+    }];
 }
 
 
