@@ -235,33 +235,37 @@ typedef NS_ENUM(NSUInteger, WCCommandType) {
         }
         else {
             // with chunck
-            __block NSMutableString *outputM = [NSMutableString string];
+            __block NSMutableData *dataM = [NSMutableData data];
+            __block NSMutableData *chunckDataM = [NSMutableData data];
             [_pipe.fileHandleForReading waitForDataInBackgroundAndNotify];
             
             // @see http://stackoverflow.com/questions/22362314/cocoa-wait-for-finish-executions
             [[NSNotificationCenter defaultCenter] addObserverForName:NSFileHandleDataAvailableNotification object:_pipe.fileHandleForReading queue:nil usingBlock:^(NSNotification *notification) {
                 
                 NSData *chunck = _pipe.fileHandleForReading.availableData;
+                [dataM appendData:[chunck copy]]; // Note: save chunck to dataM as a whole
+                
                 if (chunck.length == 0) {
                     
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        !completion ?: completion(_task.terminationStatus, [outputM copy]);
+                        NSString *output = [[NSString alloc] initWithData:dataM encoding:NSUTF8StringEncoding];
+                        !completion ?: completion(_task.terminationStatus, [output copy]);
                     });
                 }
                 else {
-                    NSString *part = [[NSString alloc] initWithData:chunck encoding:NSUTF8StringEncoding];
+                    [chunckDataM appendData:[chunck copy]];
+                    
+                    NSString *part = [[NSString alloc] initWithData:chunckDataM encoding:NSUTF8StringEncoding];
                     if (part.length) {
-                        [outputM appendString:part];
-                        
                         [_pipe.fileHandleForReading waitForDataInBackgroundAndNotify];
                         
                         readingHandler(part);
+                        
+                        chunckDataM = [NSMutableData data]; // Note: reset chunckDataM if NSData convert into NSString succeeded
                     }
                     else {
-                        // Note: NSData -> NSString error
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            !completion ?: completion(-1, [outputM copy]);
-                        });
+                        // Note: NSData -> NSString error, just leave chunck in chunckDataM, and continue get data to evaluate chunckDataM as NSString
+                        [_pipe.fileHandleForReading waitForDataInBackgroundAndNotify];
                     }
                 }
             }];
