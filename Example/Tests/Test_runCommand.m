@@ -122,4 +122,18 @@
     }];
 }
 
+- (void)test_run_command_find {
+    [self runTestWithAsyncBlock:^{
+        // Use "\\" instead of "\"
+        [WCCommandExecutor runCommand:@"find" arguments:@[@"/Users/wesley/Projects/github\\ projects/WCCommandExecutor/Example"] completion:^(int status, NSString *output) {
+            [self asyncBlockCompletedWithBlock:^{
+                NSLog(@"status: %d", status);
+                NSLog(@"output: %@", output);
+                
+                XCTAssert(status == 0);
+            }];
+        }];
+    }];
+}
+
 @end

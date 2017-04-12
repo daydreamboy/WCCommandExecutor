@@ -17,7 +17,8 @@
     [super viewDidLoad];
     
 //    [self test_run_executable_fauxpas_help];
-    [self test_run_executable_fauxpas_check];
+//    [self test_run_executable_fauxpas_check];
+    [self test_run_command_find];
 }
 
 - (void)test_run_executable_fauxpas_help {
@@ -61,5 +62,12 @@
     }];
 }
 
+- (void)test_run_command_find {
+    // Use "\\" instead of "\"
+    [WCCommandExecutor runCommand:@"find" arguments:@[@"/Users/wesley/Projects/github\\ projects/WCCommandExecutor/Example"] completion:^(int status, NSString *output) {
+        NSLog(@"status: %d", status);
+        NSLog(@"output: %@", output);
+    }];
+}
 
 @end
